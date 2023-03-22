@@ -9,7 +9,7 @@ library("pacman")
 
 p_load(tidyverse, data.table,
        here, fs,
-       lubridate, sf, geobr, googledrive,
+       lubridate, googledrive,
        openxlsx, readxl, abjutils, sidrar,
        deflateBR, brazilmaps, knitr)
 
@@ -173,11 +173,108 @@ pend.apo <- pend.apo.2ano.2 %>%
   full_join(pend.apo.9ano.2, by=c("MUNICÍPIO", "ano")) %>%
   filter(MUNICÍPIO!="TOTAL")
 
+pend.3 <- pend.2 %>%
+  full_join(pend.apo, by=c("MUNICÍPIO", "ano")) 
+
+pend.4 <- pend.3 %>%
+  mutate(valor_pen10 = valor.x.x+valor.y.x+valor.x.x.x,
+         valor_pen10_apoiadas = valor.x.y+valor.y.y+valor.y.y.y) %>%
+  select(-c(valor.x.x:valor.y.y.y)) %>%
+  mutate(valor_pen10_normal = ifelse(is.na(valor_pen10), 0, valor_pen10),
+         valor_pen10_apoiadas = ifelse(is.na(valor_pen10_apoiadas), 0, valor_pen10_apoiadas),
+         valor_pen10_total = valor_pen10+valor_pen10_apoiadas)
 
 # .--------------------------------------------.
 # |############################################|
 # |##.--------------------------------------.##|
-# |##|             Salvando                 |##|
+# |##|       Tratando banco ICMS            |##|
+# |##°--------------------------------------°##|
+# |############################################|
+# '--------------------------------------------°
+
+icms.2009 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 1) %>%
+  select(X2, X22) %>%
+  slice(3:190) %>%
+  filter(!is.na(X2)) %>%
+  rename(ano2009=X22)
+icms.2010 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 2) %>%
+  select(X2, X22) %>%
+  slice(3:190) %>%
+  filter(!is.na(X2))  %>%
+  rename(ano2010=X22)
+icms.2011 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 3) %>%
+  select(X2, X22) %>%
+  slice(3:190) %>%
+  filter(!is.na(X2)) %>%
+  rename(ano2011=X22)
+icms.2012 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 4) %>%
+  select(X2, X22) %>%
+  slice(3:190) %>%
+  filter(!is.na(X2)) %>%
+  rename(ano2012=X22)
+icms.2013 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 5) %>%
+  select(X2, X22) %>%
+  slice(3:190) %>%
+  filter(!is.na(X2)) %>%
+  rename(ano2013=X22)
+icms.2014 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 6) %>%
+  select(X2, X22) %>%
+  slice(3:190) %>%
+  filter(!is.na(X2)) %>%
+  rename(ano2014=X22)
+icms.2015 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 7) %>%
+  select(X4, X24) %>%
+  slice(3:190) %>%
+  filter(!is.na(X4)) %>%
+  rename(ano2015=X24)
+icms.2016 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 8) %>%
+  select(X1, X21) %>%
+  slice(3:190) %>%
+  filter(!is.na(X1)) %>%
+  rename(ano2016=X21)
+icms.2017 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 9) %>%
+  select(X1, X22) %>%
+  slice(3:190) %>%
+  filter(!is.na(X1)) %>%
+  rename(ano2017=X22)
+icms.2018 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 10) %>%
+  select(X2, X22) %>%
+  slice(3:190) %>%
+  filter(!is.na(X2)) %>%
+  rename(ano2018=X22)
+icms.2019 <- read.xlsx("Repasses ICMS - 2009 a 2019 (1) (1).xlsx", sheet = 11) %>%
+  select(X3, X23) %>%
+  slice(3:190) %>%
+  filter(!is.na(X3)) %>%
+  rename(ano2019=X23)
+
+#        |#|
+#       \###/
+#        \#/
+#         *
+
+icms <- icms.2009 %>%
+  full_join(icms.2010, by="X2") %>%
+  full_join(icms.2011, by="X2") %>%
+  full_join(icms.2012, by="X2") %>%
+  full_join(icms.2013, by="X2") %>%
+  full_join(icms.2014, by="X2") %>%
+  full_join(icms.2015, by=c("X2"="X4")) %>%
+  full_join(icms.2016, by=c("X2"="X1")) %>%
+  full_join(icms.2017, by=c("X2"="X1")) %>%
+  full_join(icms.2018, by="X2") %>%
+  full_join(icms.2019, by=c("X2"="X3")) %>%
+  filter(ano2009!="IQE")
+
+icms.2 <- icms %>%
+  pivot_longer(ano2009:ano2019,
+               names_to = "ano",
+               values_to = "valor") 
+
+# .--------------------------------------------.
+# |############################################|
+# |##.--------------------------------------.##|
+# |##|       Tratando banco ICMS            |##|
 # |##°--------------------------------------°##|
 # |############################################|
 # '--------------------------------------------°
