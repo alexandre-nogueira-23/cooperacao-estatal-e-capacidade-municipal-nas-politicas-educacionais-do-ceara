@@ -6,7 +6,6 @@
 
 #   (1) Carregando pacotes:
 library("pacman")
-
 p_load(tidyverse, data.table,
        here, fs,
        lubridate, googledrive,
@@ -15,11 +14,10 @@ p_load(tidyverse, data.table,
 
 #   (2) Formatando espaço de trabalho:
 options(scipen=999) # Evita aparecerem notações científicas nas tabelas
-drive_auth("") # Colocando auth para pegar dados do google drive
+#drive_auth("") # Colocando auth para pegar dados do google drive
 
 #   (3) Criando subpastas:
 setwd("~/Documentos/consultorias/cooperacao-estatal-e-capacidade-municipal-nas-politicas-educacionais-do-ceara")
-
 dir_create(c("data",
              "documents",
              "scripts",
@@ -177,12 +175,12 @@ pend.3 <- pend.2 %>%
   full_join(pend.apo, by=c("MUNICÍPIO", "ano")) 
 
 pend.4 <- pend.3 %>%
-  mutate(valor_pen10 = valor.x.x+valor.y.x+valor.x.x.x,
+  mutate(valor_pen10_normal = valor.x.x+valor.y.x+valor.x.x.x,
          valor_pen10_apoiadas = valor.x.y+valor.y.y+valor.y.y.y) %>%
   select(-c(valor.x.x:valor.y.y.y)) %>%
-  mutate(valor_pen10_normal = ifelse(is.na(valor_pen10), 0, valor_pen10),
+  mutate(valor_pen10_normal = ifelse(is.na(valor_pen10_normal), 0, valor_pen10_normal),
          valor_pen10_apoiadas = ifelse(is.na(valor_pen10_apoiadas), 0, valor_pen10_apoiadas),
-         valor_pen10_total = valor_pen10+valor_pen10_apoiadas)
+         valor_pen10_total = valor_pen10_normal+valor_pen10_apoiadas)
 
 # .--------------------------------------------.
 # |############################################|
@@ -269,21 +267,32 @@ icms <- icms.2009 %>%
 icms.2 <- icms %>%
   pivot_longer(ano2009:ano2019,
                names_to = "ano",
-               values_to = "valor") 
+               values_to = "valor") %>%
+  mutate(ano = gsub("ano", "", ano))
 
 # .--------------------------------------------.
 # |############################################|
 # |##.--------------------------------------.##|
-# |##|       Tratando banco ICMS            |##|
+# |##|    juntando bases icms e pena0       |##|
+# |##°--------------------------------------°##|
+# |############################################|
+# '--------------------------------------------°
+
+cooperacao <- pend.4 %>%
+  full_join(icms.2, c("MUNICÍPIO"="X2", "ano"="ano")) %>%
+  rename(valor_icms = valor) %>%
+  mutate(across(c(valor_pen10_normal:valor_icms), ~ifelse(is.na(.x), 0, .x)))
+
+# .--------------------------------------------.
+# |############################################|
+# |##.--------------------------------------.##|
+# |##|          Salvando                    |##|
 # |##°--------------------------------------°##|
 # |############################################|
 # '--------------------------------------------°
 
 # Salvando:
-setwd("C:\\Users\\alexandre pichilinga\\Documents\\00_trabalho_observatório\\trajeto-renda-lista-completa-dos-beneficiarios-de-todas-as-fases\\outputs")
-write.xlsx(lista.12, "trajeto renda_lista completa dos beneficiários de todas as fases_20230310.xlsx")
-write.xlsx(score, "trajeto renda_lista completa dos beneficiários de todas as fases_score atualização por município_20230310.xlsx")
-
-#lista.12 <- read.xlsx("trajeto renda_lista completa dos beneficiários de todas as fases_20230310.xlsx")
+setwd("~/Documentos/consultorias/cooperacao-estatal-e-capacidade-municipal-nas-politicas-educacionais-do-ceara/outputs")
+write.xlsx(cooperacao, paste("Banco com variáveis de cooperação_",  Sys.Date(), ".xlsx"))
 
 #                                      ~~~~~ Fim ~~~~~
