@@ -49,12 +49,45 @@ query <- "SELECT
 formacao_especif_anos_iniciais,
 formacao_especif_anos_finais,
 tipo_contratacao,
-ano
-FROM `basedosdados.br_inep_censo_escolar.docente` as censo_docentes"
+etapa_ensino, rede,
+ano, sigla_uf, id_municipio
+FROM `basedosdados.br_inep_censo_escolar.docente` as censo_docentes
+WHERE rede = 'municipal' AND sigla_uf = 'CE'"
 
 # aqui carregamos o arquivo para o R
 censo_docentes <- read_sql(query)
 
+# .--------------------------------------------.
+# |############################################|
+# |##.--------------------------------------.##|
+# |##|   Tratando variáveis                 |##|
+# |##°--------------------------------------°##|
+# |############################################|
+# '--------------------------------------------°
+
+# Tratando var sobre etapa de ensino:
+df_docentes_etapa <- df %>%
+  filter(id_tabela=="docente") %>%
+  filter(nome_coluna=="etapa_ensino") %>%
+  mutate(chave = as.character(chave))
+  
+# Categorias relativas a ensino fundamental: 
+# c(4, 41, 5, 56, 6, 65, 69, 7, 70, 72, 8, 9, 10, 11, 12,
+#   13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
+
+# Dúvidas: essas duas categorias se encaixam como ensino fundamental? 
+# 60 = EJA - Presencial - Integrada à Ed. Profissional de Nível Fundamental - FIC
+# 61 = EJA - Semipresencial - Integrada à Ed. Profissional de Nível Fundamental - FIC
+# 73 = Curso FIC integrado na modalidade EJA - Nível Fundamental (EJA integrada à Educação Profissional de Nível Fundamental)
+
+censo_docentes.2 <- censo_docentes %>%
+  filter(etapa_ensino %in% c(4, 41, 5, 56, 6, 60, 61, 65, 69, 7, 70, 72, 73, 8, 9, 10, 11, 12,
+                             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24)) %>%
+  group_by(id_municipio, ano) %>%
+  summarise(n_docentes_ens.fundamental = n(),
+            n_docentes_ens.fundamental_formacao.continuada = sum(formacao_especif_anos_iniciais==1 |
+                                                                   formacao_especif_anos_finais==1, na.rm = TRUE),
+            tx.docentes.formacao.continuada = n_docentes_ens.fundamental_formacao.continuada/n_docentes_ens.fundamental)
 
 # .--------------------------------------------.
 # |############################################|
