@@ -87,28 +87,13 @@ censo_docentes.2 <- censo_docentes %>%
   summarise(n_docentes_ens.fundamental = n(),
             n_docentes_ens.fundamental_formacao.continuada = sum(formacao_especif_anos_iniciais==1 |
                                                                    formacao_especif_anos_finais==1, na.rm = TRUE),
-            tx.docentes.formacao.continuada = n_docentes_ens.fundamental_formacao.continuada/n_docentes_ens.fundamental)
+            perc.docentes.formacao.continuada = n_docentes_ens.fundamental_formacao.continuada/n_docentes_ens.fundamental,
+            n_docentes.concursados = sum(tipo_contratacao==1, na.rm = TRUE),
+            perc.docentes.concursados = n_docentes.concursados/n_docentes_ens.fundamental)
 
-# .--------------------------------------------.
-# |############################################|
-# |##.--------------------------------------.##|
-# |##|    Censo escolar - gestores          |##|
-# |##°--------------------------------------°##|
-# |############################################|
-# '--------------------------------------------°
-
-# Abrindo censo escolar:
-setwd("~/Documentos/consultorias/cooperacao-estatal-e-capacidade-municipal-nas-politicas-educacionais-do-ceara/data/microdados_ed_basica_2012/dados")
-censo2012 <- fread("microdados_ed_basica_2012.csv")
-
-
-#        |#|
-#       \###/
-#        \#/
-#         *
-
-
-
+# Atenção: as variáveis tipo de contratação, formação continuada para anos finais e 
+# para anos iniciais só existem de 2011 em diante.
+# Deve-se colocar NA nos casos antes de 2011.
 
 # .--------------------------------------------.
 # |############################################|
@@ -120,6 +105,6 @@ censo2012 <- fread("microdados_ed_basica_2012.csv")
 
 # Salvando:
 setwd("~/Documentos/consultorias/cooperacao-estatal-e-capacidade-municipal-nas-politicas-educacionais-do-ceara/outputs")
-write.xlsx(cooperacao, paste("Banco com variáveis de cooperação_",  Sys.Date(), ".xlsx"))
+write.xlsx(censo_docentes.2, paste("Banco com variáveis de capacidade_técnico administrativa_",  Sys.Date(), ".xlsx"))
 
 #                                      ~~~~~ Fim ~~~~~
